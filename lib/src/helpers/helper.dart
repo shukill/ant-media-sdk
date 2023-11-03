@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:ant_media_flutter/ant_media_flutter.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -336,25 +337,34 @@ class AntHelper extends Object {
   }
 
   Future<MediaStream> createStream(media, userScreen) async {
-    final Map<String, dynamic> mediaConstraints = {
+    final Map<String, dynamic> audioConstraints = {
       'audio': true,
-      'video': {
-        'mandatory': {
-          'minWidth':
-              '640', // Provide your own width, height and frame rate here
-          'minHeight': '480',
-          'minFrameRate': '30',
-        },
-        'facingMode': 'user',
-        'optional': [],
-      }
+      'video': false,
+    };
+    final Map<String, dynamic> videoConstraints = {
+      'audio': false,
+      'video': true,
     };
 
-    MediaStream stream = userScreen
+    final Map<String, dynamic> mediaConstraints = {
+      'video': '0',
+      'audio': false,
+    };
+    bool isWindows = Platform.isWindows;
+
+    MediaStream audioStream =
+        await navigator.mediaDevices.getUserMedia(audioConstraints);
+
+    MediaStream videoStream = isWindows
         ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-        : await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    this.onLocalStream(stream);
-    return stream;
+        : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
+
+    MediaStreamTrack mediaStreamTrack = videoStream.getVideoTracks().first;
+
+    audioStream.addTrack(mediaStreamTrack);
+
+    this.onLocalStream(audioStream);
+    return audioStream;
   }
 
   setStream(MediaStream? media) {
