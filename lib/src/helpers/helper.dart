@@ -356,21 +356,6 @@ class AntHelper extends Object {
       } else {
         audioSupported = true;
       }
-      Fluttertoast.showToast(
-        msg: 'Audio Encoding supported by the platform : $audioSupported',
-        gravity: ToastGravity.CENTER,
-      );
-
-      List<InputDevice> listOfInputDevices = await record.listInputDevices();
-
-      Fluttertoast.showToast(
-        msg: 'List of audio input devices found were : $listOfInputDevices',
-      );
-      if (listOfInputDevices.isEmpty) {
-        audioSupported = false;
-      }
-      Amplitude amplutude = await record.getAmplitude();
-      Fluttertoast.showToast(msg: 'AMP Found :: ${amplutude.current}');
     }
 
     final Map<String, dynamic> audioConstraints = {
@@ -394,8 +379,10 @@ class AntHelper extends Object {
       MediaStream audioStream =
           await navigator.mediaDevices.getUserMedia(audioConstraints);
 
-      MediaStreamTrack mediaStreamTrack = audioStream.getAudioTracks().first;
-      videoStream.addTrack(mediaStreamTrack);
+      List<MediaStreamTrack> mediaStreamTracks = audioStream.getAudioTracks();
+      if (mediaStreamTracks.isNotEmpty) {
+        videoStream.addTrack(mediaStreamTracks.first);
+      }
     }
 
     this.onLocalStream(videoStream);
