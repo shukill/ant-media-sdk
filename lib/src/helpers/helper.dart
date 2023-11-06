@@ -6,6 +6,8 @@ import 'dart:io';
 
 import 'package:ant_media_flutter/ant_media_flutter.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:record/record.dart';
 
 import '../utils/websocket.dart'
     if (dart.library.js) '../utils/websocket_web.dart';
@@ -337,6 +339,40 @@ class AntHelper extends Object {
   }
 
   Future<MediaStream> createStream(media, userScreen) async {
+    final record = AudioRecorder();
+    bool isRecordPermission = await record.hasPermission();
+    bool audioSupported = false;
+    if (isRecordPermission) {
+      const opusEncoder = AudioEncoder.opus;
+      const aacEncoder = AudioEncoder.aacLc;
+      final isOpusSupported = await record.isEncoderSupported(
+        opusEncoder,
+      );
+      if (!isOpusSupported) {
+        final isAacEncoder = await record.isEncoderSupported(
+          aacEncoder,
+        );
+        audioSupported = isAacEncoder;
+      } else {
+        audioSupported = true;
+      }
+      Fluttertoast.showToast(
+        msg: 'Audio Encoding supported by the platform : $audioSupported',
+        gravity: ToastGravity.CENTER,
+      );
+
+      List<InputDevice> listOfInputDevices = await record.listInputDevices();
+
+      Fluttertoast.showToast(
+        msg: 'List of audio input devices found were : $listOfInputDevices',
+      );
+      if (listOfInputDevices.isEmpty) {
+        audioSupported = false;
+      }
+      Amplitude amplutude = await record.getAmplitude();
+      Fluttertoast.showToast(msg: 'AMP Found :: ${amplutude.current}');
+    }
+
     final Map<String, dynamic> audioConstraints = {
       'audio': true,
       'video': false,
@@ -351,20 +387,19 @@ class AntHelper extends Object {
       'audio': false,
     };
     bool isWindows = Platform.isWindows;
-
-    MediaStream audioStream =
-        await navigator.mediaDevices.getUserMedia(audioConstraints);
-
     MediaStream videoStream = isWindows
         ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
         : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
+    if (audioSupported) {
+      MediaStream audioStream =
+          await navigator.mediaDevices.getUserMedia(audioConstraints);
 
-    MediaStreamTrack mediaStreamTrack = videoStream.getVideoTracks().first;
+      MediaStreamTrack mediaStreamTrack = audioStream.getAudioTracks().first;
+      videoStream.addTrack(mediaStreamTrack);
+    }
 
-    audioStream.addTrack(mediaStreamTrack);
-
-    this.onLocalStream(audioStream);
-    return audioStream;
+    this.onLocalStream(videoStream);
+    return videoStream;
   }
 
   setStream(MediaStream? media) {
