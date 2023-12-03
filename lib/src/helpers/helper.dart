@@ -290,14 +290,19 @@ class AntHelper extends Object {
   }
 
   connect(AntMediaType type) async {
-    // _initializeData();
     _type = type;
     var url = '$_host';
     _socket = SimpleWebSocket(url);
 
     if (this._type == AntMediaType.DataChannelOnly) DataChannelOnly = true;
 
-    print('connect to $url');
+    MediaStream stream = await createStream('', userScreen);
+    if (stream.getTracks().isEmpty) {
+      closeStreams();
+      return;
+    } else {
+      setStream(stream);
+    }
 
     _socket?.onOpen = () {
       print('onOpen');
@@ -375,6 +380,10 @@ class AntHelper extends Object {
     MediaStream videoStream = isWindows
         ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
         : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
+
+    print(
+      'STREAM STATUS AT CREATE STREAM $videoStream ${videoStream.getTracks().length}',
+    );
     if (audioSupported) {
       MediaStream audioStream =
           await navigator.mediaDevices.getUserMedia(audioConstraints);
@@ -516,6 +525,19 @@ class AntHelper extends Object {
     if (pc != null) {
       pc.close();
       _peerConnections.remove(id);
+    }
+    var dc = _dataChannel;
+    if (dc != null) {
+      dc.close();
+    }
+    this.onStateChange(HelperState.CallStateBye);
+  }
+
+  closeStreams() {
+    if (_mute) muteMic(false);
+    if (_localStream != null) {
+      _localStream?.dispose();
+      _localStream = null;
     }
     var dc = _dataChannel;
     if (dc != null) {
