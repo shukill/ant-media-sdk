@@ -296,8 +296,11 @@ class AntHelper extends Object {
 
     if (this._type == AntMediaType.DataChannelOnly) DataChannelOnly = true;
 
-    MediaStream stream = await createStream('', userScreen);
-    if (stream.getTracks().isEmpty) {
+    MediaStream? stream = await createStream('', userScreen);
+    if (stream == null) {
+      closeStreams();
+      return;
+    } else if (stream.getTracks().isEmpty) {
       closeStreams();
       return;
     } else {
@@ -343,59 +346,63 @@ class AntHelper extends Object {
     await _socket?.connect();
   }
 
-  Future<MediaStream> createStream(media, userScreen) async {
-    final record = AudioRecorder();
-    bool isRecordPermission = await record.hasPermission();
-    bool audioSupported = false;
-    if (isRecordPermission) {
-      const opusEncoder = AudioEncoder.opus;
-      const aacEncoder = AudioEncoder.aacLc;
-      final isOpusSupported = await record.isEncoderSupported(
-        opusEncoder,
-      );
-      if (!isOpusSupported) {
-        final isAacEncoder = await record.isEncoderSupported(
-          aacEncoder,
+  Future<MediaStream?> createStream(media, userScreen) async {
+    try {
+      final record = AudioRecorder();
+      bool isRecordPermission = await record.hasPermission();
+      bool audioSupported = false;
+      if (isRecordPermission) {
+        const opusEncoder = AudioEncoder.opus;
+        const aacEncoder = AudioEncoder.aacLc;
+        final isOpusSupported = await record.isEncoderSupported(
+          opusEncoder,
         );
-        audioSupported = isAacEncoder;
-      } else {
-        audioSupported = true;
+        if (!isOpusSupported) {
+          final isAacEncoder = await record.isEncoderSupported(
+            aacEncoder,
+          );
+          audioSupported = isAacEncoder;
+        } else {
+          audioSupported = true;
+        }
       }
-    }
 
-    final Map<String, dynamic> audioConstraints = {
-      'audio': true,
-      'video': false,
-    };
-    final Map<String, dynamic> videoConstraints = {
-      'audio': false,
-      'video': true,
-    };
+      final Map<String, dynamic> audioConstraints = {
+        'audio': true,
+        'video': false,
+      };
+      final Map<String, dynamic> videoConstraints = {
+        'audio': false,
+        'video': true,
+      };
 
-    final Map<String, dynamic> mediaConstraints = {
-      'video': '0',
-      'audio': false,
-    };
-    bool isWindows = Platform.isWindows;
-    MediaStream videoStream = isWindows
-        ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-        : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
+      final Map<String, dynamic> mediaConstraints = {
+        'video': '0',
+        'audio': false,
+      };
+      bool isWindows = Platform.isWindows;
+      MediaStream videoStream = isWindows
+          ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
+          : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
 
-    print(
-      'STREAM STATUS AT CREATE STREAM $videoStream ${videoStream.getTracks().length}',
-    );
-    if (audioSupported) {
-      MediaStream audioStream =
-          await navigator.mediaDevices.getUserMedia(audioConstraints);
+      print(
+        'STREAM STATUS AT CREATE STREAM $videoStream ${videoStream.getTracks().length}',
+      );
+      if (audioSupported) {
+        MediaStream audioStream =
+            await navigator.mediaDevices.getUserMedia(audioConstraints);
 
-      List<MediaStreamTrack> mediaStreamTracks = audioStream.getAudioTracks();
-      if (mediaStreamTracks.isNotEmpty) {
-        videoStream.addTrack(mediaStreamTracks.first);
+        List<MediaStreamTrack> mediaStreamTracks = audioStream.getAudioTracks();
+        if (mediaStreamTracks.isNotEmpty) {
+          videoStream.addTrack(mediaStreamTracks.first);
+        }
       }
-    }
 
-    this.onLocalStream(videoStream);
-    return videoStream;
+      this.onLocalStream(videoStream);
+      return videoStream;
+    } catch (e) {
+      return null;
+    }
   }
 
   setStream(MediaStream? media) {
