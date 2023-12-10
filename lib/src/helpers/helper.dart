@@ -375,13 +375,15 @@ class AntHelper extends Object {
         'audio': false,
         'video': {
           'mandatory': {
-            'minWidth': 640, // Set the minimum width
-            'minHeight': 480, // Set the minimum height
-            'maxWidth': 1280, // Set the maximum width
-            'maxHeight': 720, // Set the maximum height
+            'minWidth': 640,
+            'minHeight': 480,
+            'maxWidth': 1280,
+            'maxHeight': 720,
+            'frameRate': 30,
+            'bitrate': 2000000,
           },
           'optional': [
-            {'frameRate': 30}, // Set the desired frame rate (fps)
+            {'videoMimeType': 'video/webm;codecs=vp8'},
           ],
         },
       };
