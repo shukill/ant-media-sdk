@@ -15,14 +15,7 @@ enum HelperState {
   ConnectionError,
 }
 
-enum AntMediaType {
-  Default,
-  Publish,
-  Play,
-  Peer,
-  Conference,
-  DataChannelOnly
-}
+enum AntMediaType { Default, Publish, Play, Peer, Conference, DataChannelOnly }
 
 typedef void HelperStateCallback(HelperState state);
 typedef void StreamStateCallback(MediaStream stream);
@@ -31,8 +24,7 @@ typedef void DataChannelMessageCallback(
     RTCDataChannel dc, RTCDataChannelMessage data, bool isReceived);
 typedef void DataChannelCallback(RTCDataChannel dc);
 typedef void ConferenceUpdateCallback(dynamic streams);
-typedef void Callbacks(String command , Map mapData);
-
+typedef void Callbacks(String command, Map mapData);
 
 class DataChannelMessage extends Object {
   RTCDataChannelMessage message;
@@ -44,11 +36,12 @@ class DataChannelMessage extends Object {
 class AntMediaFlutter {
   static AntHelper? anthelper;
 
-  static void requestPermissions() {
-    Permission.camera.request().then((value) => Permission.microphone
-        .request()
-        .then((value) =>
-            Permission.bluetoothConnect.request().then((value) => null)));
+  static Future<void> requestPermissions() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.audio,
+      Permission.microphone,
+      Permission.camera,
+    ].request();
   }
 
   static Future<bool> startForegroundService() async {
@@ -64,21 +57,20 @@ class AntMediaFlutter {
   }
 
   static void connect(
-    String ip,
-    String streamId,
-    String roomId,
-    AntMediaType type,
-    bool userScreen,
-    HelperStateCallback onStateChange,
-    StreamStateCallback onLocalStream,
-    StreamStateCallback onAddRemoteStream,
-    DataChannelCallback onDataChannel,
-    DataChannelMessageCallback onDataChannelMessage,
-    ConferenceUpdateCallback onupdateConferencePerson,
-    StreamStateCallback onRemoveRemoteStream,
-    List<Map<String, String>> iceServers,
-    Callbacks callbacks
-  ) async {
+      String ip,
+      String streamId,
+      String roomId,
+      AntMediaType type,
+      bool userScreen,
+      HelperStateCallback onStateChange,
+      StreamStateCallback onLocalStream,
+      StreamStateCallback onAddRemoteStream,
+      DataChannelCallback onDataChannel,
+      DataChannelMessageCallback onDataChannelMessage,
+      ConferenceUpdateCallback onupdateConferencePerson,
+      StreamStateCallback onRemoveRemoteStream,
+      List<Map<String, String>> iceServers,
+      Callbacks callbacks) async {
     anthelper = null;
     anthelper ??= AntHelper(
         //host
@@ -118,8 +110,7 @@ class AntMediaFlutter {
         iceServers,
 
         //callbacks
-        callbacks )
-
+        callbacks)
       ..connect(type);
   }
 }

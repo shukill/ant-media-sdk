@@ -373,7 +373,17 @@ class AntHelper extends Object {
       };
       final Map<String, dynamic> videoConstraints = {
         'audio': false,
-        'video': true,
+        'video': {
+          'mandatory': {
+            'minWidth': 640, // Set the minimum width
+            'minHeight': 480, // Set the minimum height
+            'maxWidth': 1280, // Set the maximum width
+            'maxHeight': 720, // Set the maximum height
+          },
+          'optional': [
+            {'frameRate': 30}, // Set the desired frame rate (fps)
+          ],
+        },
       };
 
       final Map<String, dynamic> mediaConstraints = {
