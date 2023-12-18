@@ -373,23 +373,16 @@ class AntHelper extends Object {
       };
       final Map<String, dynamic> videoConstraints = {
         'audio': false,
-        'video': {
-          'mandatory': {
-            'minWidth': 640,
-            'minHeight': 480,
-            'maxWidth': 1280,
-            'maxHeight': 720,
-            'frameRate': 30,
-            'bitrate': 2000000,
-          },
-          'optional': [
-            {'videoMimeType': 'video/webm;codecs=vp8'},
-          ],
-        },
+        'video': true,
       };
 
       final Map<String, dynamic> mediaConstraints = {
-        'video': '0',
+        'video': {
+          {
+            'deviceId': {'exact': '0'},
+            'mandatory': {'frameRate': 30.0}
+          }
+        },
         'audio': false,
       };
       bool isWindows = Platform.isWindows;
