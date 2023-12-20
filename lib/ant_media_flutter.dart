@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:ant_media_flutter/src/helpers/helper.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -70,7 +71,8 @@ class AntMediaFlutter {
       ConferenceUpdateCallback onupdateConferencePerson,
       StreamStateCallback onRemoveRemoteStream,
       List<Map<String, String>> iceServers,
-      Callbacks callbacks) async {
+      Callbacks callbacks,
+      {required BuildContext context}) async {
     anthelper = null;
     anthelper ??= AntHelper(
         //host
@@ -111,6 +113,9 @@ class AntMediaFlutter {
 
         //callbacks
         callbacks)
-      ..connect(type);
+      ..connect(
+        type,
+        context: context,
+      );
   }
 }
