@@ -346,8 +346,29 @@ class AntHelper extends Object {
     await _socket?.connect();
   }
 
+  Future<void> _getSources() async {
+    try {
+      var sources =
+          await desktopCapturer.getSources(types: [SourceType.Screen]);
+      for (var element in sources) {
+        print(
+            'name: ${element.name}, id: ${element.id}, type: ${element.type},');
+      }
+
+      return;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<MediaStream?> createStream(media, userScreen) async {
     try {
+      bool isWindows = Platform.isWindows;
+
+      if (isWindows) {
+        await _getSources();
+      }
+
       final record = AudioRecorder();
       bool isRecordPermission = await record.hasPermission();
       bool audioSupported = false;
@@ -385,7 +406,7 @@ class AntHelper extends Object {
         },
         'audio': false,
       };
-      bool isWindows = Platform.isWindows;
+
       MediaStream videoStream = isWindows
           ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
           : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
