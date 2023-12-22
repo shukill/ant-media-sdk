@@ -5,13 +5,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ant_media_flutter/ant_media_flutter.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:record/record.dart';
 
 import '../utils/websocket.dart'
     if (dart.library.js) '../utils/websocket_web.dart';
-import 'select_screen_share.dart';
 
 class AntHelper extends Object {
   MediaStream? _localStream;
@@ -143,9 +141,8 @@ class AntHelper extends Object {
   }
 
   void onMessage(
-    message, {
-    required BuildContext context,
-  }) async {
+    message,
+  ) async {
     Map<String, dynamic> mapData = message;
     var command = mapData['command'];
     print('current command is ' + command);
@@ -161,7 +158,6 @@ class AntHelper extends Object {
             id,
             'publish',
             userScreen,
-            context: context,
           );
 
           await _createDataChannel(_streamId, _peerConnections[_streamId]!);
@@ -188,7 +184,6 @@ class AntHelper extends Object {
               id,
               'play',
               userScreen,
-              context: context,
             );
             _createDataChannel(id, _peerConnections[id]!);
           }
@@ -302,9 +297,8 @@ class AntHelper extends Object {
   }
 
   connect(
-    AntMediaType type, {
-    required BuildContext context,
-  }) async {
+    AntMediaType type,
+  ) async {
     _type = type;
     var url = '$_host';
     _socket = SimpleWebSocket(url);
@@ -314,7 +308,6 @@ class AntHelper extends Object {
     MediaStream? stream = await createStream(
       '',
       userScreen,
-      context: context,
     );
     if (stream == null) {
       closeStreams();
@@ -355,7 +348,6 @@ class AntHelper extends Object {
       JsonDecoder decoder = new JsonDecoder();
       this.onMessage(
         decoder.convert(message),
-        context: context,
       );
     };
 
@@ -368,53 +360,58 @@ class AntHelper extends Object {
     await _socket?.connect();
   }
 
-  Future<MediaStream?> createStream(media, userScreen,
-      {required BuildContext context}) async {
+  Future<void> _getSources() async {
     try {
-      bool isWindows = Platform.isWindows;
-      MediaStream? videoStream;
-      if (isWindows) {
-        final source = await showDialog<DesktopCapturerSource>(
-          context: context,
-          builder: (context) => ScreenSelectDialog(),
-        );
-        if (source != null) {
-          var stream =
-              await navigator.mediaDevices.getDisplayMedia(<String, dynamic>{
-            'audio': true,
-            'video': {
-              'deviceId': {'exact': source.id},
-              'mandatory': {'frameRate': 30.0}
-            }
-          });
-          stream.getVideoTracks()[0].onEnded = () {
-            print(
-                'By adding a listener on onEnded you can: 1) catch stop video sharing on Web');
-          };
-
-          videoStream = stream;
-          return videoStream;
-        } else {
-          throw Exception();
-        }
+      var sources = await desktopCapturer.getSources(
+        types: [SourceType.Screen],
+      );
+      for (var element in sources) {
+        print(
+            'name: ${element.name}, id: ${element.id}, type: ${element.type}');
       }
 
-      final record = AudioRecorder();
-      bool isRecordPermission = await record.hasPermission();
+      return;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> getStreamListners() async {
+    Future.delayed(const Duration(milliseconds: 100), () async {
+      await _getSources();
+    });
+    desktopCapturer.onAdded.stream.listen((source) {});
+    desktopCapturer.onRemoved.stream.listen((source) {});
+  }
+
+  Future<MediaStream?> createStream(
+    media,
+    userScreen,
+  ) async {
+    try {
+      bool isWindows = Platform.isWindows;
       bool audioSupported = false;
-      if (isRecordPermission) {
-        const opusEncoder = AudioEncoder.opus;
-        const aacEncoder = AudioEncoder.aacLc;
-        final isOpusSupported = await record.isEncoderSupported(
-          opusEncoder,
-        );
-        if (!isOpusSupported) {
-          final isAacEncoder = await record.isEncoderSupported(
-            aacEncoder,
+      if (isWindows) {
+        await getStreamListners();
+        audioSupported = true;
+      } else {
+        final record = AudioRecorder();
+        bool isRecordPermission = await record.hasPermission();
+
+        if (isRecordPermission) {
+          const opusEncoder = AudioEncoder.opus;
+          const aacEncoder = AudioEncoder.aacLc;
+          final isOpusSupported = await record.isEncoderSupported(
+            opusEncoder,
           );
-          audioSupported = isAacEncoder;
-        } else {
-          audioSupported = true;
+          if (!isOpusSupported) {
+            final isAacEncoder = await record.isEncoderSupported(
+              aacEncoder,
+            );
+            audioSupported = isAacEncoder;
+          } else {
+            audioSupported = true;
+          }
         }
       }
 
@@ -431,13 +428,14 @@ class AntHelper extends Object {
         'video': {
           {
             'deviceId': {'exact': '0'},
-            'mandatory': {'frameRate': 30.0}
+            'mandatory': {
+              {'videoMimeType': 'video/webm;codecs=vp8'},
+            }
           }
         },
-        'audio': false,
       };
 
-      videoStream = isWindows
+      MediaStream videoStream = isWindows
           ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
           : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
 
@@ -465,8 +463,11 @@ class AntHelper extends Object {
     _localStream = media;
   }
 
-  _createPeerConnection(id, media, user_Screen,
-      {required BuildContext context}) async {
+  _createPeerConnection(
+    id,
+    media,
+    user_Screen,
+  ) async {
     if (_type == AntMediaType.Publish ||
         _type == AntMediaType.Peer ||
         _type == AntMediaType.Conference ||
@@ -475,7 +476,6 @@ class AntHelper extends Object {
         _localStream = await createStream(
           media,
           user_Screen,
-          context: context,
         );
       _remoteStreams.add(_localStream!);
     }

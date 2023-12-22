@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:ant_media_flutter/src/helpers/helper.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_background/flutter_background.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -38,7 +37,7 @@ class AntMediaFlutter {
   static AntHelper? anthelper;
 
   static Future<void> requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
+    await [
       Permission.audio,
       Permission.microphone,
       Permission.camera,
@@ -58,21 +57,21 @@ class AntMediaFlutter {
   }
 
   static void connect(
-      String ip,
-      String streamId,
-      String roomId,
-      AntMediaType type,
-      bool userScreen,
-      HelperStateCallback onStateChange,
-      StreamStateCallback onLocalStream,
-      StreamStateCallback onAddRemoteStream,
-      DataChannelCallback onDataChannel,
-      DataChannelMessageCallback onDataChannelMessage,
-      ConferenceUpdateCallback onupdateConferencePerson,
-      StreamStateCallback onRemoveRemoteStream,
-      List<Map<String, String>> iceServers,
-      Callbacks callbacks,
-      {required BuildContext context}) async {
+    String ip,
+    String streamId,
+    String roomId,
+    AntMediaType type,
+    bool userScreen,
+    HelperStateCallback onStateChange,
+    StreamStateCallback onLocalStream,
+    StreamStateCallback onAddRemoteStream,
+    DataChannelCallback onDataChannel,
+    DataChannelMessageCallback onDataChannelMessage,
+    ConferenceUpdateCallback onupdateConferencePerson,
+    StreamStateCallback onRemoveRemoteStream,
+    List<Map<String, String>> iceServers,
+    Callbacks callbacks,
+  ) async {
     anthelper = null;
     anthelper ??= AntHelper(
         //host
@@ -115,7 +114,6 @@ class AntMediaFlutter {
         callbacks)
       ..connect(
         type,
-        context: context,
       );
   }
 }
