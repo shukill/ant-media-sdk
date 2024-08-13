@@ -6,10 +6,10 @@ import 'dart:io';
 
 import 'package:ant_media_flutter/ant_media_flutter.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:record/record.dart';
 
-import '../utils/websocket.dart'
-    if (dart.library.js) '../utils/websocket_web.dart';
+import '../utils/websocket.dart' if (dart.library.js) '../utils/websocket_web.dart';
 
 class AntHelper extends Object {
   MediaStream? _localStream;
@@ -33,20 +33,7 @@ class AntHelper extends Object {
   bool DataChannelOnly = false;
   List<Map<String, String>> iceServers;
 
-  AntHelper(
-      this._host,
-      this._streamId,
-      this._roomId,
-      this.onStateChange,
-      this.onAddRemoteStream,
-      this.onDataChannel,
-      this.onDataChannelMessage,
-      this.onLocalStream,
-      this.onRemoveRemoteStream,
-      this.userScreen,
-      this.onupdateConferencePerson,
-      this.iceServers,
-      this.callbacks) {
+  AntHelper(this._host, this._streamId, this._roomId, this.onStateChange, this.onAddRemoteStream, this.onDataChannel, this.onDataChannelMessage, this.onLocalStream, this.onRemoveRemoteStream, this.userScreen, this.onupdateConferencePerson, this.iceServers, this.callbacks) {
     final Map<String, dynamic> config = {
       "sdpSemantics": "plan-b",
       'iceServers': iceServers,
@@ -99,18 +86,14 @@ class AntHelper extends Object {
     if (_localStream != null) {
       //  if (_localStream == null) throw Exception('Stream is not initialized');
 
-      final videoTrack = _localStream!
-          .getVideoTracks()
-          .firstWhere((track) => track.kind == 'video');
+      final videoTrack = _localStream!.getVideoTracks().firstWhere((track) => track.kind == 'video');
       Helper.switchCamera(videoTrack);
     }
   }
 
   Future<void> muteMic(bool mute) async {
     if (_localStream != null) {
-      final audioTrack = _localStream!
-          .getAudioTracks()
-          .firstWhere((track) => track.kind == 'audio');
+      final audioTrack = _localStream!.getAudioTracks().firstWhere((track) => track.kind == 'audio');
       Helper.setMicrophoneMute(mute, audioTrack);
     }
   }
@@ -118,9 +101,7 @@ class AntHelper extends Object {
   Future<void> toggleCam(bool state) async {
     //true for on
     if (_localStream != null) {
-      final videoTrack = _localStream!
-          .getVideoTracks()
-          .firstWhere((track) => track.kind == 'video');
+      final videoTrack = _localStream!.getVideoTracks().firstWhere((track) => track.kind == 'video');
       videoTrack.enabled = state;
     }
   }
@@ -162,10 +143,7 @@ class AntHelper extends Object {
 
           await _createDataChannel(_streamId, _peerConnections[_streamId]!);
           await _createOfferAntMedia(id, _peerConnections[id]!, 'publish');
-          if (_type == AntMediaType.Publish ||
-              _type == AntMediaType.Peer ||
-              _type == AntMediaType.Conference ||
-              _type == AntMediaType.Default) {
+          if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Conference || _type == AntMediaType.Default) {
             _startgettingRoomInfo(_streamId, _roomId);
           }
         }
@@ -175,8 +153,7 @@ class AntHelper extends Object {
           var id = mapData['streamId'];
           var type = mapData['type'];
           var sdp = mapData['sdp'];
-          sdp =
-              sdp?.replaceAll("a=extmap:13 urn:3gpp:video-orientation\r\n", "");
+          sdp = sdp?.replaceAll("a=extmap:13 urn:3gpp:video-orientation\r\n", "");
           var isTypeOffer = (type == 'offer');
           if (isTypeOffer) if (isTypeOffer) {
             this.onStateChange(HelperState.CallStateNew);
@@ -187,14 +164,12 @@ class AntHelper extends Object {
             );
             _createDataChannel(id, _peerConnections[id]!);
           }
-          await _peerConnections[id]!
-              .setRemoteDescription(new RTCSessionDescription(sdp, type));
+          await _peerConnections[id]!.setRemoteDescription(new RTCSessionDescription(sdp, type));
           for (int i = 0; i < _remoteCandidates.length; i++) {
             await _peerConnections[id]!.addCandidate(_remoteCandidates[i]);
           }
           _remoteCandidates = [];
-          if (isTypeOffer)
-            await _createAnswerAntMedia(id, _peerConnections[id]!, 'play');
+          if (isTypeOffer) await _createAnswerAntMedia(id, _peerConnections[id]!, 'play');
         }
         break;
       case 'stop':
@@ -206,8 +181,7 @@ class AntHelper extends Object {
       case 'takeCandidate':
         {
           var id = mapData['streamId'];
-          RTCIceCandidate candidate = new RTCIceCandidate(
-              mapData['candidate'], mapData['id'], mapData['label']);
+          RTCIceCandidate candidate = new RTCIceCandidate(mapData['candidate'], mapData['id'], mapData['label']);
           if (_peerConnections[id] != null) {
             await _peerConnections[id]!.addCandidate(candidate);
           } else {
@@ -225,20 +199,15 @@ class AntHelper extends Object {
 
       case 'notification':
         {
-          if (mapData['definition'] == 'play_finished' ||
-              mapData['definition'] == 'publish_finished') {
+          if (mapData['definition'] == 'play_finished' || mapData['definition'] == 'publish_finished') {
             closePeerConnection(_streamId);
-          } else if (_type == AntMediaType.Publish ||
-              _type == AntMediaType.Peer ||
-              _type == AntMediaType.Conference ||
-              _type == AntMediaType.Default) {
+          } else if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Conference || _type == AntMediaType.Default) {
             if (mapData['definition'] == 'joinedTheRoom') {
               await startStreamingAntMedia(_streamId, _roomId);
             }
           }
 
-          if (mapData['definition'] == 'publish_started' ||
-              mapData['definition'] == 'play_started') {
+          if (mapData['definition'] == 'publish_started' || mapData['definition'] == 'play_started') {
             getStreamInfo(_streamId);
           }
         }
@@ -251,10 +220,7 @@ class AntHelper extends Object {
         break;
       case 'roomInformation':
         {
-          if (_type == AntMediaType.Publish ||
-              _type == AntMediaType.Peer ||
-              _type == AntMediaType.Conference ||
-              _type == AntMediaType.Default) {
+          if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Conference || _type == AntMediaType.Default) {
             if (isStartedConferencing) {
               _startgettingRoomInfo(_streamId, _roomId);
             }
@@ -281,9 +247,7 @@ class AntHelper extends Object {
         break;
       case 'connectWithNewId':
         {
-          if (_type == AntMediaType.Play ||
-              _type == AntMediaType.Peer ||
-              _type == AntMediaType.Conference) {
+          if (_type == AntMediaType.Play || _type == AntMediaType.Peer || _type == AntMediaType.Conference) {
             join(_streamId);
           }
         }
@@ -323,8 +287,7 @@ class AntHelper extends Object {
       print('onOpen');
       this.onStateChange(HelperState.ConnectionOpen);
 
-      if (_type == AntMediaType.Publish ||
-          _type == AntMediaType.DataChannelOnly) {
+      if (_type == AntMediaType.Publish || _type == AntMediaType.DataChannelOnly) {
         startStreamingAntMedia(_streamId, _roomId);
       }
       if (_type == AntMediaType.Play) {
@@ -366,8 +329,7 @@ class AntHelper extends Object {
         types: [SourceType.Screen],
       );
       for (var element in sources) {
-        print(
-            'name: ${element.name}, id: ${element.id}, type: ${element.type}');
+        print('name: ${element.name}, id: ${element.id}, type: ${element.type}');
       }
 
       return;
@@ -435,16 +397,17 @@ class AntHelper extends Object {
         },
       };
 
-      MediaStream videoStream = isWindows
-          ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints)
-          : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
+      if (Platform.isAndroid) {
+        await Helper.requestCapturePermission();
+      }
+
+      MediaStream videoStream = isWindows ? await navigator.mediaDevices.getDisplayMedia(mediaConstraints) : await navigator.mediaDevices.getDisplayMedia(videoConstraints);
 
       print(
         'STREAM STATUS AT CREATE STREAM $videoStream ${videoStream.getTracks().length}',
       );
       if (audioSupported) {
-        MediaStream audioStream =
-            await navigator.mediaDevices.getUserMedia(audioConstraints);
+        MediaStream audioStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
 
         List<MediaStreamTrack> mediaStreamTracks = audioStream.getAudioTracks();
         if (mediaStreamTracks.isNotEmpty) {
@@ -468,10 +431,7 @@ class AntHelper extends Object {
     media,
     user_Screen,
   ) async {
-    if (_type == AntMediaType.Publish ||
-        _type == AntMediaType.Peer ||
-        _type == AntMediaType.Conference ||
-        _type == AntMediaType.Default) {
+    if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Conference || _type == AntMediaType.Default) {
       if (media != 'data' && _localStream == null)
         _localStream = await createStream(
           media,
@@ -482,11 +442,7 @@ class AntHelper extends Object {
 
     RTCPeerConnection pc = await createPeerConnection(_config);
 
-    if (_type == AntMediaType.Publish ||
-        _type == AntMediaType.Peer ||
-        _type == AntMediaType.Default ||
-        _type == AntMediaType.Conference &&
-            _type != AntMediaType.DataChannelOnly) {
+    if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Default || _type == AntMediaType.Conference && _type != AntMediaType.DataChannelOnly) {
       if (media != 'data' && _localStream != null) pc.addStream(_localStream!);
     }
 
@@ -518,10 +474,7 @@ class AntHelper extends Object {
       _addDataChannel(id, channel);
     };
 
-    if (_type == AntMediaType.Publish ||
-        _type == AntMediaType.Peer ||
-        _type == AntMediaType.Conference &&
-            _type != AntMediaType.DataChannelOnly) {
+    if (_type == AntMediaType.Publish || _type == AntMediaType.Peer || _type == AntMediaType.Conference && _type != AntMediaType.DataChannelOnly) {
       pc.addStream(_localStream!);
     }
 
@@ -546,8 +499,7 @@ class AntHelper extends Object {
 
   _createOfferAntMedia(String id, RTCPeerConnection pc, String media) async {
     try {
-      RTCSessionDescription s = await pc
-          .createOffer(DataChannelOnly ? _dc_constraints : _constraints);
+      RTCSessionDescription s = await pc.createOffer(DataChannelOnly ? _dc_constraints : _constraints);
       pc.setLocalDescription(s);
       var request = new Map();
       request['command'] = 'takeConfiguration';
@@ -562,8 +514,7 @@ class AntHelper extends Object {
 
   _createAnswerAntMedia(String id, RTCPeerConnection pc, media) async {
     try {
-      RTCSessionDescription s = await pc
-          .createAnswer(DataChannelOnly ? _dc_constraints : _constraints);
+      RTCSessionDescription s = await pc.createAnswer(DataChannelOnly ? _dc_constraints : _constraints);
       pc.setLocalDescription(s);
 
       var request = new Map();
