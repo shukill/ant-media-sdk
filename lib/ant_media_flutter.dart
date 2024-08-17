@@ -20,8 +20,7 @@ enum AntMediaType { Default, Publish, Play, Peer, Conference, DataChannelOnly }
 typedef void HelperStateCallback(HelperState state);
 typedef void StreamStateCallback(MediaStream stream);
 typedef void OtherEventCallback(dynamic event);
-typedef void DataChannelMessageCallback(
-    RTCDataChannel dc, RTCDataChannelMessage data, bool isReceived);
+typedef void DataChannelMessageCallback(RTCDataChannel dc, RTCDataChannelMessage data, bool isReceived);
 typedef void DataChannelCallback(RTCDataChannel dc);
 typedef void ConferenceUpdateCallback(dynamic streams);
 typedef void Callbacks(String command, Map mapData);
@@ -46,11 +45,10 @@ class AntMediaFlutter {
 
   static Future<bool> startForegroundService() async {
     const androidConfig = FlutterBackgroundAndroidConfig(
-      notificationTitle: 'Title of the notification',
-      notificationText: 'Text of the notification',
-      notificationImportance: AndroidNotificationImportance.Default,
-      notificationIcon:
-          AndroidResource(name: 'background_icon', defType: 'drawable'),
+      notificationTitle: 'Running in background',
+      notificationText: 'Background app is running',
+      notificationImportance: AndroidNotificationImportance.max,
+      notificationIcon: AndroidResource(name: 'background_icon', defType: 'drawable'),
     );
     await FlutterBackground.initialize(androidConfig: androidConfig);
     return FlutterBackground.enableBackgroundExecution();
